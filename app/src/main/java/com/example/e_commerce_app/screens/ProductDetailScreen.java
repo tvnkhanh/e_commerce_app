@@ -13,6 +13,8 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.Fragment;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.denzcoskun.imageslider.ImageSlider;
 import com.denzcoskun.imageslider.constants.ScaleTypes;
@@ -33,10 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductDetailScreen extends Fragment {
-    private FirebaseFirestore db;
-    private final BottomNavigationView bottomNavigationView;
+    private BottomNavigationView bottomNavigationView;
     private ImageSlider imageSlider;
-    private ImageView backButton;
+    private ImageView backButton, cartButton;
     private ShapeableImageView productDetailShopImage;
     private TextView productPrice, productName, productRatingDisplay, productDetailDescText,
                 productDetailRatingBarText, productDetailTotalRatings, productDetailShopName;
@@ -46,17 +47,22 @@ public class ProductDetailScreen extends Fragment {
         this.bottomNavigationView = bottomNavigationView;
     }
 
+    public ProductDetailScreen() {
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), onBackPressedCallback);
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), onBackPressedProductDetailCallback);
         View view = inflater.inflate(R.layout.fragment_product_detail_screen, container, false);
 
         Product product = (Product) getArguments().getSerializable("product");
-        bottomNavigationView.setVisibility(View.INVISIBLE);
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setVisibility(View.INVISIBLE);
+        }
 
         setControl(view, product);
         setEvent(view, product);
@@ -70,6 +76,7 @@ public class ProductDetailScreen extends Fragment {
 
         imageSlider = view.findViewById(R.id.product_detail_image_slider);
         backButton = view.findViewById(R.id.product_detail_back_button);
+        cartButton = view.findViewById(R.id.product_detail_cart_button);
         productName = view.findViewById(R.id.product_detail_name);
         productPrice = view.findViewById(R.id.product_detail_price);
         productRatingDisplay = view.findViewById(R.id.product_detail_rating_display);
@@ -97,7 +104,7 @@ public class ProductDetailScreen extends Fragment {
     }
 
     public void setEvent(View view, Product product) {
-        db = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         List<String> productImageUrls = product.getListImageUrl();
         List<SlideModel> slideModels = new ArrayList<>();
@@ -111,7 +118,36 @@ public class ProductDetailScreen extends Fragment {
             @Override
             public void onClick(View v) {
                 bottomNavigationView.setVisibility(View.VISIBLE);
-                requireActivity().getSupportFragmentManager().popBackStack();
+                requireActivity().getSupportFragmentManager().popBackStack("product_detail", FragmentManager.POP_BACK_STACK_INCLUSIVE);
+            }
+        });
+
+        cartButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("product", product);
+
+                FragmentManager fragmentManager = getParentFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                Fragment currentFragment = fragmentManager.findFragmentById(R.id.product_detail_container);
+                if (currentFragment != null) {
+                    fragmentTransaction.detach(currentFragment);
+                }
+
+                Fragment cartFragment = fragmentManager.findFragmentByTag("CartFragment");
+                if (cartFragment == null) {
+                    cartFragment = new CartScreen(bottomNavigationView);
+                    cartFragment.setArguments(bundle);
+
+                    fragmentTransaction.add(R.id.product_detail_container, cartFragment, "CartFragment");
+                } else {
+                    fragmentTransaction.attach(cartFragment);
+                }
+
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
             }
         });
 
@@ -131,7 +167,7 @@ public class ProductDetailScreen extends Fragment {
                 });
     }
 
-    private final OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
+    private final OnBackPressedCallback onBackPressedProductDetailCallback = new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
             bottomNavigationView.setVisibility(View.VISIBLE);
@@ -142,6 +178,6 @@ public class ProductDetailScreen extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        onBackPressedCallback.remove();
+        onBackPressedProductDetailCallback.remove();
     }
 }

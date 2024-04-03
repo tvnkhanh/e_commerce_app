@@ -14,7 +14,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:id="@+id/homeFragmentContainer">
+        android:id="@+id/home_fragment_container">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -40,7 +40,7 @@
                     android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/search_box"
+                        android:id="@+id/home_screen_search_box"
                         android:layout_width="268dp"
                         android:layout_height="30dp"
                         android:layout_marginStart="10dp"
@@ -54,14 +54,14 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/search_icon"
+                        android:id="@+id/home_screen_search_icon"
                         android:layout_width="17dp"
                         android:layout_height="17dp"
                         android:layout_marginStart="4dp"
                         android:elevation="11dp"
-                        app:layout_constraintBottom_toBottomOf="@+id/search_box"
-                        app:layout_constraintStart_toStartOf="@+id/search_box"
-                        app:layout_constraintTop_toTopOf="@+id/search_box"
+                        app:layout_constraintBottom_toBottomOf="@+id/home_screen_search_box"
+                        app:layout_constraintStart_toStartOf="@+id/home_screen_search_box"
+                        app:layout_constraintTop_toTopOf="@+id/home_screen_search_box"
                         app:srcCompat="@drawable/search_icon" />
 
                     <ImageButton
@@ -70,33 +70,33 @@
                         android:layout_height="17dp"
                         android:layout_marginEnd="4dp"
                         android:elevation="11dp"
-                        app:layout_constraintBottom_toBottomOf="@+id/search_box"
-                        app:layout_constraintEnd_toEndOf="@+id/search_box"
-                        app:layout_constraintTop_toTopOf="@+id/search_box"
+                        app:layout_constraintBottom_toBottomOf="@+id/home_screen_search_box"
+                        app:layout_constraintEnd_toEndOf="@+id/home_screen_search_box"
+                        app:layout_constraintTop_toTopOf="@+id/home_screen_search_box"
                         app:srcCompat="@drawable/camera_icon" />
 
                     <ImageButton
-                        android:id="@+id/cart_button"
+                        android:id="@+id/home_screen_cart_button"
                         android:layout_width="42dp"
                         android:layout_height="42dp"
                         android:layout_marginStart="24dp"
                         android:background="@null"
                         android:elevation="10dp"
-                        app:layout_constraintBottom_toBottomOf="@+id/search_box"
-                        app:layout_constraintStart_toEndOf="@+id/search_box"
-                        app:layout_constraintTop_toTopOf="@+id/search_box"
+                        app:layout_constraintBottom_toBottomOf="@+id/home_screen_search_box"
+                        app:layout_constraintStart_toEndOf="@+id/home_screen_search_box"
+                        app:layout_constraintTop_toTopOf="@+id/home_screen_search_box"
                         app:srcCompat="@drawable/cart_icon" />
 
                     <ImageButton
-                        android:id="@+id/messenger_button"
+                        android:id="@+id/home_screen_messenger_button"
                         android:layout_width="42dp"
                         android:layout_height="42dp"
                         android:layout_marginEnd="14dp"
                         android:background="@null"
                         android:elevation="10dp"
-                        app:layout_constraintBottom_toBottomOf="@+id/search_box"
+                        app:layout_constraintBottom_toBottomOf="@+id/home_screen_search_box"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/search_box"
+                        app:layout_constraintTop_toTopOf="@+id/home_screen_search_box"
                         app:srcCompat="@drawable/messenger_icon" />
 
                     <ImageView
