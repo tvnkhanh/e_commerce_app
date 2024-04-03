@@ -79,14 +79,17 @@ public class HomeScreen extends AppCompatActivity {
             @Override
             public void onProductClick(Product product) {
                 bottomNavigationView = findViewById(R.id.bottomNavigationView);
+
                 Bundle bundle = new Bundle();
                 bundle.putSerializable("product", product);
 
-                ProductDetailScreen fragment = new ProductDetailScreen();
+                ProductDetailScreen fragment = new ProductDetailScreen(bottomNavigationView);
                 fragment.setArguments(bundle);
-                bottomNavigationView.setVisibility(View.INVISIBLE);
 
-                getSupportFragmentManager().beginTransaction().replace(R.id.homeFragmentContainer, fragment).commit();
+                getSupportFragmentManager().beginTransaction().setReorderingAllowed(true)
+                        .replace(R.id.homeFragmentContainer, fragment)
+                        .addToBackStack("desc_fragment")
+                        .commit();
             }
         });
         productRecyclerView.setAdapter(productAdapter);
