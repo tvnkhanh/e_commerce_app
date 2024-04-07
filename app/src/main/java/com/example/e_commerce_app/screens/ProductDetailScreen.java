@@ -20,6 +20,8 @@ import com.denzcoskun.imageslider.ImageSlider;
 import com.denzcoskun.imageslider.constants.ScaleTypes;
 import com.denzcoskun.imageslider.models.SlideModel;
 import com.example.e_commerce_app.R;
+import com.example.e_commerce_app.models.Cart;
+import com.example.e_commerce_app.models.CartDetail;
 import com.example.e_commerce_app.models.Product;
 import com.example.e_commerce_app.models.Rating;
 import com.example.e_commerce_app.models.UserInfo;
@@ -27,17 +29,23 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class ProductDetailScreen extends Fragment {
+    FirebaseFirestore db;
     private BottomNavigationView bottomNavigationView;
     private ImageSlider imageSlider;
-    private ImageView backButton, cartButton;
+    private ImageView backButton, cartButton, addToCartBtn;
     private ShapeableImageView productDetailShopImage;
     private TextView productPrice, productName, productRatingDisplay, productDetailDescText,
                 productDetailRatingBarText, productDetailTotalRatings, productDetailShopName;
@@ -86,6 +94,7 @@ public class ProductDetailScreen extends Fragment {
         productDetailTotalRatings = view.findViewById(R.id.product_detail_total_ratings);
         productDetailShopImage = view.findViewById(R.id.product_detail_shop_image);
         productDetailShopName = view.findViewById(R.id.product_detail_shop_name);
+        addToCartBtn = view.findViewById(R.id.product_detail_add_to_cart_btn);
 
         productName.setText(product.getProductName());
         productPrice.setText("đ" + product.getPrice());
@@ -104,7 +113,7 @@ public class ProductDetailScreen extends Fragment {
     }
 
     public void setEvent(View view, Product product) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         List<String> productImageUrls = product.getListImageUrl();
         List<SlideModel> slideModels = new ArrayList<>();
@@ -165,6 +174,68 @@ public class ProductDetailScreen extends Fragment {
                         Toast.makeText(view.getContext(), "No shop data found in database", Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        addToCartBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                db.collection("cart").whereEqualTo("uid", "current_user").get()
+                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                            @Override
+                            public void onSuccess(QuerySnapshot carts) {
+                                if (!carts.isEmpty()) {
+                                    for (DocumentSnapshot cart : carts.getDocuments()) {
+                                        Cart cartObject = cart.toObject(Cart.class);
+                                        db.collection("cart_detail").whereEqualTo("cartId", cartObject.getCartId()).get()
+                                                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                                    @Override
+                                                    public void onSuccess(QuerySnapshot cartItems) {
+                                                        if (!cartItems.isEmpty()) {
+                                                            int temp = 0;
+                                                            for (DocumentSnapshot cartItem : cartItems.getDocuments()) {
+                                                                CartDetail cartDetail = cartItem.toObject(CartDetail.class);
+                                                                if (Objects.equals(cartDetail.getProductId(), product.getId())) {
+                                                                    temp += 1;
+                                                                    cartDetail.setQuantity(cartDetail.getQuantity() + 1);
+                                                                    db.collection("cart_detail").document(cartItem.getId()).set(cartDetail);
+                                                                }
+                                                            }
+                                                            if (temp == 0) {
+                                                                addToCart(product.getId(), cartObject.getCartId());
+                                                            }
+                                                        } else {
+                                                            addToCart(product.getId(), cartObject.getCartId());
+                                                        }
+                                                    }
+                                                });
+                                    }
+
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+    private void addToCart(String productId, String cartId) {
+        db = FirebaseFirestore.getInstance();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("cartId", cartId);
+        data.put("productId", productId);
+        data.put("quantity", 1);
+
+        db.collection("cart_detail").add(data).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+            @Override
+            public void onSuccess(DocumentReference documentReference) {
+                Toast.makeText(ProductDetailScreen.this.getContext(), "Added to cart successfully", Toast.LENGTH_SHORT).show();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(ProductDetailScreen.this.getContext(), "Added to cart fail", Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
     private final OnBackPressedCallback onBackPressedProductDetailCallback = new OnBackPressedCallback(true) {
