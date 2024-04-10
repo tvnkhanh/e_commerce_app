@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -67,7 +68,9 @@ public class ProductDetailScreen extends Fragment {
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), onBackPressedProductDetailCallback);
         View view = inflater.inflate(R.layout.fragment_product_detail_screen, container, false);
 
+        assert getArguments() != null;
         Product product = (Product) getArguments().getSerializable("product");
+
         if (bottomNavigationView != null) {
             bottomNavigationView.setVisibility(View.INVISIBLE);
         }
@@ -127,7 +130,7 @@ public class ProductDetailScreen extends Fragment {
             @Override
             public void onClick(View v) {
                 bottomNavigationView.setVisibility(View.VISIBLE);
-                requireActivity().getSupportFragmentManager().popBackStack("product_detail", FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                requireActivity().getSupportFragmentManager().popBackStack("home_screen", FragmentManager.POP_BACK_STACK_INCLUSIVE);
             }
         });
 
@@ -196,7 +199,20 @@ public class ProductDetailScreen extends Fragment {
                                                                 if (Objects.equals(cartDetail.getProductId(), product.getId())) {
                                                                     temp += 1;
                                                                     cartDetail.setQuantity(cartDetail.getQuantity() + 1);
-                                                                    db.collection("cart_detail").document(cartItem.getId()).set(cartDetail);
+                                                                    db.collection("cart_detail").document(cartItem.getId()).set(cartDetail)
+                                                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                                                @Override
+                                                                                public void onSuccess(Void unused) {
+                                                                                    Toast.makeText(ProductDetailScreen.this.getContext(),
+                                                                                            "Added to cart successfully", Toast.LENGTH_SHORT).show();
+                                                                                }
+                                                                            }).addOnFailureListener(new OnFailureListener() {
+                                                                                @Override
+                                                                                public void onFailure(@NonNull Exception e) {
+                                                                                    Toast.makeText(ProductDetailScreen.this.getContext(),
+                                                                                            "Added to cart fail", Toast.LENGTH_SHORT).show();
+                                                                                }
+                                                                            });
                                                                 }
                                                             }
                                                             if (temp == 0) {

@@ -102,7 +102,7 @@ public class HomeScreen extends AppCompatActivity {
 
                         getSupportFragmentManager().beginTransaction().setReorderingAllowed(true)
                                 .replace(R.id.home_fragment_container, fragment)
-                                .addToBackStack("product_detail")
+                                .addToBackStack("home_screen")
                                 .commit();
                     }
                 });

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -31,6 +32,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.io.Serializable;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -47,6 +49,7 @@ public class CartScreen extends Fragment implements QuantityListener {
     private CartAdapter cartAdapter;
     private ProgressBar progressBar;
     private TextView totalPrice;
+    private Button cartBuyBtn;
     List<CartDetail> cartDetailList = new ArrayList<>();
 
     public CartScreen(BottomNavigationView bottomNavigationView) {
@@ -81,6 +84,7 @@ public class CartScreen extends Fragment implements QuantityListener {
         progressBar = view.findViewById(R.id.cart_screen_progress_circle);
         noProductImage = view.findViewById(R.id.cart_screen_no_product_image);
         totalPrice = view.findViewById(R.id.cart_screen_total_price);
+        cartBuyBtn = view.findViewById(R.id.cart_screen_buy_btn);
     }
 
     public void setEvent() {
@@ -96,7 +100,7 @@ public class CartScreen extends Fragment implements QuantityListener {
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-                Fragment currentFragment = fragmentManager.findFragmentById(R.id.product_detail_container);
+                Fragment currentFragment = fragmentManager.findFragmentById(R.id.cart_screen_container);
                 if (currentFragment != null) {
                     fragmentTransaction.detach(currentFragment);
                 }
@@ -108,9 +112,9 @@ public class CartScreen extends Fragment implements QuantityListener {
                         product = (Product) getArguments().getSerializable("product");
                         bundle.putSerializable("product", product);
                         productDetailFragment.setArguments(bundle);
-                        fragmentTransaction.add(R.id.product_detail_container, productDetailFragment, "ProductDetailFragment");
+                        fragmentTransaction.add(R.id.cart_screen_container, productDetailFragment, "ProductDetailFragment");
                     } else {
-                        requireActivity().getSupportFragmentManager().popBackStack();
+                        requireActivity().getSupportFragmentManager().popBackStack("cart", FragmentManager.POP_BACK_STACK_INCLUSIVE);
                     }
                 } else {
                     fragmentTransaction.attach(productDetailFragment);
@@ -295,6 +299,33 @@ public class CartScreen extends Fragment implements QuantityListener {
         }
         String formattedPrice = formatter.format(total);
         totalPrice.setText("đ" + formattedPrice);
+
+        cartBuyBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bundle bundle = new Bundle();
+                FragmentManager fragmentManager = getParentFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                Fragment currentFragment = fragmentManager.findFragmentById(R.id.cart_screen_container);
+                if (currentFragment != null) {
+                    fragmentTransaction.detach(currentFragment);
+                }
+
+                Fragment paymentFragment = fragmentManager.findFragmentByTag("PaymentFragment");
+                if (paymentFragment == null) {
+                    paymentFragment = new PaymentScreen(bottomNavigationView);
+                    bundle.putSerializable("products", (Serializable) selectedProduct);
+                    paymentFragment.setArguments(bundle);
+                    fragmentTransaction.add(R.id.cart_screen_container, paymentFragment, "PaymentFragment");
+                } else {
+                    fragmentTransaction.attach(paymentFragment);
+                }
+
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
     }
 
     public interface CartDetailsCallBack {
