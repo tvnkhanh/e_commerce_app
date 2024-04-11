@@ -100,7 +100,7 @@ public class CartScreen extends Fragment implements QuantityListener {
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-                Fragment currentFragment = fragmentManager.findFragmentById(R.id.cart_screen_container);
+                Fragment currentFragment = fragmentManager.findFragmentById(R.id.product_detail_container);
                 if (currentFragment != null) {
                     fragmentTransaction.detach(currentFragment);
                 }
@@ -112,9 +112,9 @@ public class CartScreen extends Fragment implements QuantityListener {
                         product = (Product) getArguments().getSerializable("product");
                         bundle.putSerializable("product", product);
                         productDetailFragment.setArguments(bundle);
-                        fragmentTransaction.add(R.id.cart_screen_container, productDetailFragment, "ProductDetailFragment");
+                        fragmentTransaction.add(R.id.product_detail_container, productDetailFragment, "ProductDetailFragment");
                     } else {
-                        requireActivity().getSupportFragmentManager().popBackStack("cart", FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                        requireActivity().getSupportFragmentManager().popBackStack("home_screen", FragmentManager.POP_BACK_STACK_INCLUSIVE);
                     }
                 } else {
                     fragmentTransaction.attach(productDetailFragment);
@@ -186,6 +186,7 @@ public class CartScreen extends Fragment implements QuantityListener {
                                                 productList.remove(product);
                                                 db.collection("cart_detail").document(document.getId()).delete();
                                                 cartAdapter.updateData(productList, cartDetailList);
+                                                noProductImage.setVisibility(View.VISIBLE);
                                                 if (cartAdapter.getCheckBox().isChecked()) {
                                                     cartAdapter.updateTotalPrice(productList, cartDetailList);
                                                 }
@@ -316,6 +317,8 @@ public class CartScreen extends Fragment implements QuantityListener {
                 if (paymentFragment == null) {
                     paymentFragment = new PaymentScreen(bottomNavigationView);
                     bundle.putSerializable("products", (Serializable) selectedProduct);
+                    bundle.putSerializable("cartDetails", (Serializable) cartDetailList);
+                    bundle.putSerializable("totalPayment", formattedPrice);
                     paymentFragment.setArguments(bundle);
                     fragmentTransaction.add(R.id.cart_screen_container, paymentFragment, "PaymentFragment");
                 } else {

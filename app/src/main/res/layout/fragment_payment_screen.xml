@@ -115,7 +115,7 @@
                 <ProgressBar
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/cart_screen_progress_circle"
+                    android:id="@+id/payment_screen_progress_circle"
                     app:layout_constraintEnd_toEndOf="@+id/payment_screen_list_item"
                     app:layout_constraintStart_toStartOf="@+id/payment_screen_list_item"
                     app:layout_constraintTop_toTopOf="@+id/payment_screen_list_item"

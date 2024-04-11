@@ -114,7 +114,7 @@ public class HomeScreen extends AppCompatActivity {
                 CartScreen cartScreen = new CartScreen(bottomNavigationView);
                 getSupportFragmentManager().beginTransaction().setReorderingAllowed(true)
                         .replace(R.id.home_fragment_container, cartScreen)
-                        .addToBackStack("cart")
+                        .addToBackStack("home_screen")
                         .commit();
             }
         });
