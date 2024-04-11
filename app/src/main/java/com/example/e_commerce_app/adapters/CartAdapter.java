@@ -1,10 +1,12 @@
 package com.example.e_commerce_app.adapters;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,7 +24,6 @@ import java.util.Objects;
 
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
     Context context;
-    CheckBox checkBox;
     List<Product> list;
     List<Product> list_0 = new ArrayList<>();
     List<CartDetail> cartDetailList;
@@ -36,10 +37,6 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         this.quantityListener = quantityListener;
         this.cartDetailList = cartDetailList;
         this.onQuantityChangeListener = onQuantityChangeListener;
-    }
-
-    public CheckBox getCheckBox() {
-        return checkBox;
     }
 
     @NonNull
@@ -58,7 +55,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
 
             Product product = this.list.get(position);
             for (CartDetail cartDetailItem : cartDetailList) {
-                if (Objects.equals(product.getId(), cartDetailItem.getProductId())) {
+                if (Objects.equals(product.getProductId(), cartDetailItem.getProductId())) {
                     quantity[0] = cartDetailItem.getQuantity();
                 }
             }
@@ -67,10 +64,10 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
             holder.productDescription.setText(product.getDesc());
             holder.productPrice.setText("đ" + product.getPrice());
             holder.productQuantity.setText(String.valueOf(quantity[0]));
-            CartAdapter.this.checkBox.setOnClickListener(new View.OnClickListener() {
+            holder.checkBox.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (CartAdapter.this.checkBox.isChecked()) {
+                    if (holder.checkBox.isChecked()) {
                         list_0.add(list.get(holder.getAdapterPosition()));
                     } else {
                         list_0.remove(list.get(holder.getAdapterPosition()));
@@ -101,13 +98,14 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         return list.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        CheckBox checkBox;
         ImageView productImage, productMinus, productPlus;
         TextView productName, productDescription, productPrice, productQuantity;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            CartAdapter.this.checkBox = itemView.findViewById(R.id.product_horizontal_checkbox);
+            checkBox = itemView.findViewById(R.id.product_horizontal_checkbox);
             productImage = itemView.findViewById(R.id.product_horizontal_image);
             productMinus = itemView.findViewById(R.id.product_horizontal_minus_quantity);
             productPlus = itemView.findViewById(R.id.product_horizontal_plus_quantity);
@@ -118,12 +116,14 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void updateData(List<Product> newProductList, List<CartDetail> newCartDetailList) {
         this.list = newProductList;
         this.cartDetailList = newCartDetailList;
         notifyDataSetChanged();
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void updateTotalPrice(List<Product> newProductList, List<CartDetail> newCartDetailList) {
         quantityListener.onQuantityChange(newProductList, newCartDetailList);
         notifyDataSetChanged();

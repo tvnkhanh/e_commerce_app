@@ -189,6 +189,9 @@
                         app:layout_constraintStart_toStartOf="@+id/products"
                         app:layout_constraintTop_toTopOf="@+id/products" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"/>
             </LinearLayout>
         </ScrollView>
     </FrameLayout>

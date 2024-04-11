@@ -44,16 +44,18 @@ public class CartScreen extends Fragment implements QuantityListener {
     private FirebaseFirestore db;
     private BottomNavigationView bottomNavigationView;
     private ImageView cartScreenBackBtn, noProductImage;
-    private Product product;
+    private boolean isFromHome;
     private RecyclerView productCartContainer;
     private CartAdapter cartAdapter;
     private ProgressBar progressBar;
     private TextView totalPrice;
     private Button cartBuyBtn;
     List<CartDetail> cartDetailList = new ArrayList<>();
+    List<Product> productList = new ArrayList<>();
 
-    public CartScreen(BottomNavigationView bottomNavigationView) {
+    public CartScreen(BottomNavigationView bottomNavigationView, boolean isFromHome) {
         this.bottomNavigationView = bottomNavigationView;
+        this.isFromHome = isFromHome;
     }
 
     public CartScreen() {
@@ -89,39 +91,16 @@ public class CartScreen extends Fragment implements QuantityListener {
 
     public void setEvent() {
         setProductItemCartView();
+
         cartScreenBackBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Bundle bundle = new Bundle();
-                if (bottomNavigationView != null) {
+                if (isFromHome) {
                     bottomNavigationView.setVisibility(View.VISIBLE);
-                }
-
-                FragmentManager fragmentManager = getParentFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                Fragment currentFragment = fragmentManager.findFragmentById(R.id.product_detail_container);
-                if (currentFragment != null) {
-                    fragmentTransaction.detach(currentFragment);
-                }
-
-                Fragment productDetailFragment = fragmentManager.findFragmentByTag("ProductDetailFragment");
-                if (productDetailFragment == null) {
-                    if (getArguments() != null) {
-                        productDetailFragment = new ProductDetailScreen(bottomNavigationView);
-                        product = (Product) getArguments().getSerializable("product");
-                        bundle.putSerializable("product", product);
-                        productDetailFragment.setArguments(bundle);
-                        fragmentTransaction.add(R.id.product_detail_container, productDetailFragment, "ProductDetailFragment");
-                    } else {
-                        requireActivity().getSupportFragmentManager().popBackStack("home_screen", FragmentManager.POP_BACK_STACK_INCLUSIVE);
-                    }
+                    requireActivity().getSupportFragmentManager().popBackStack();
                 } else {
-                    fragmentTransaction.attach(productDetailFragment);
+                    requireActivity().getSupportFragmentManager().popBackStack();
                 }
-
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
             }
         });
     }
@@ -131,8 +110,6 @@ public class CartScreen extends Fragment implements QuantityListener {
         productCartContainer.setLayoutManager(new LinearLayoutManager(this.getContext()));
 
         db = FirebaseFirestore.getInstance();
-
-        List<Product> productList = new ArrayList<>();
         cartAdapter = new CartAdapter(this.getContext(), productList, cartDetailList, this, new CartAdapter.OnQuantityChangeListener() {
             @Override
             public void onAddQuantity(Product product, int quantity) {
@@ -140,7 +117,7 @@ public class CartScreen extends Fragment implements QuantityListener {
                     @Override
                     public void onCartDetailsCallback(List<CartDetail> cartDetails) {
                         db.collection("cart_detail").whereEqualTo("cartId", cartDetails.get(0).getCartId())
-                                .whereEqualTo("productId", product.getId()).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                .whereEqualTo("productId", product.getProductId()).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                                     @Override
                                     public void onSuccess(QuerySnapshot querySnapshot) {
                                         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
@@ -151,9 +128,6 @@ public class CartScreen extends Fragment implements QuantityListener {
 
                                             db.collection("cart_detail").document(document.getId()).set(cartDetail);
                                             cartAdapter.updateData(productList, cartDetailList);
-                                            if (cartAdapter.getCheckBox().isChecked()) {
-                                                cartAdapter.updateTotalPrice(productList, cartDetailList);
-                                            }
                                         }
 
                                     }
@@ -168,7 +142,7 @@ public class CartScreen extends Fragment implements QuantityListener {
                     @Override
                     public void onCartDetailsCallback(List<CartDetail> cartDetails) {
                         db.collection("cart_detail").whereEqualTo("cartId", cartDetails.get(0).getCartId())
-                                .whereEqualTo("productId", product.getId()).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                .whereEqualTo("productId", product.getProductId()).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                                     @Override
                                     public void onSuccess(QuerySnapshot querySnapshot) {
                                         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
@@ -179,17 +153,11 @@ public class CartScreen extends Fragment implements QuantityListener {
                                                 cartDetailList.add(cartDetail);
                                                 db.collection("cart_detail").document(document.getId()).set(cartDetail);
                                                 cartAdapter.updateData(productList, cartDetailList);
-                                                if (cartAdapter.getCheckBox().isChecked()) {
-                                                    cartAdapter.updateTotalPrice(productList, cartDetailList);
-                                                }
                                             } else {
                                                 productList.remove(product);
                                                 db.collection("cart_detail").document(document.getId()).delete();
                                                 cartAdapter.updateData(productList, cartDetailList);
                                                 noProductImage.setVisibility(View.VISIBLE);
-                                                if (cartAdapter.getCheckBox().isChecked()) {
-                                                    cartAdapter.updateTotalPrice(productList, cartDetailList);
-                                                }
                                             }
                                         }
                                     }
@@ -209,9 +177,8 @@ public class CartScreen extends Fragment implements QuantityListener {
                                 @Override
                                 public void onSuccess(DocumentSnapshot product) {
                                     Product item = product.toObject(Product.class);
-                                    if (!productList.isEmpty())
-                                        productList.clear();
                                     productList.add(item);
+
                                     progressBar.setVisibility(View.GONE);
                                     noProductImage.setVisibility(View.GONE);
 
@@ -239,11 +206,11 @@ public class CartScreen extends Fragment implements QuantityListener {
                                                     for (DocumentSnapshot cartItem : cartItems.getDocuments()) {
                                                         CartDetail cartDetail = cartItem.toObject(CartDetail.class);
                                                         cartDetailList.add(cartDetail);
-                                                        progressBar.setVisibility(View.GONE);
-                                                        noProductImage.setVisibility(View.GONE);
-
-                                                        callback.onCartDetailsCallback(cartDetailList);
                                                     }
+                                                    progressBar.setVisibility(View.GONE);
+                                                    noProductImage.setVisibility(View.GONE);
+
+                                                    callback.onCartDetailsCallback(cartDetailList);
                                                 } else {
                                                     progressBar.setVisibility(View.GONE);
                                                     noProductImage.setVisibility(View.VISIBLE);
@@ -289,7 +256,7 @@ public class CartScreen extends Fragment implements QuantityListener {
                 Number number = formatter.parse(item.getPrice());
                 int num = number.intValue();
                 for (CartDetail cartDetail : cartDetailList) {
-                    if (Objects.equals(cartDetail.getProductId(), item.getId())) {
+                    if (Objects.equals(cartDetail.getProductId(), item.getProductId())) {
                         paymentPrice = num * cartDetail.getQuantity();
                     }
                 }
@@ -308,25 +275,16 @@ public class CartScreen extends Fragment implements QuantityListener {
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-                Fragment currentFragment = fragmentManager.findFragmentById(R.id.cart_screen_container);
-                if (currentFragment != null) {
-                    fragmentTransaction.detach(currentFragment);
-                }
+                Fragment paymentFragment = new PaymentScreen(bottomNavigationView);
+                bundle.putSerializable("products", (Serializable) selectedProduct);
+                bundle.putSerializable("cartDetails", (Serializable) cartDetailList);
+                bundle.putSerializable("totalPayment", formattedPrice);
+                paymentFragment.setArguments(bundle);
 
-                Fragment paymentFragment = fragmentManager.findFragmentByTag("PaymentFragment");
-                if (paymentFragment == null) {
-                    paymentFragment = new PaymentScreen(bottomNavigationView);
-                    bundle.putSerializable("products", (Serializable) selectedProduct);
-                    bundle.putSerializable("cartDetails", (Serializable) cartDetailList);
-                    bundle.putSerializable("totalPayment", formattedPrice);
-                    paymentFragment.setArguments(bundle);
-                    fragmentTransaction.add(R.id.cart_screen_container, paymentFragment, "PaymentFragment");
-                } else {
-                    fragmentTransaction.attach(paymentFragment);
-                }
-
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
+                fragmentTransaction.setReorderingAllowed(true)
+                        .replace(R.id.cart_screen_container, paymentFragment)
+                        .addToBackStack("payment_screen")
+                        .commit();
             }
         });
     }

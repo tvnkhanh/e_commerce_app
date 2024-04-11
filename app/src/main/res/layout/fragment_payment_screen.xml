@@ -95,7 +95,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Dia chi"
+                        android:text="233A Đ. Phan Văn Trị, Phường 11, Bình Thạnh, Thành phố Hồ Chí Minh, Việt Nam"
                         android:maxLines="2"/>
                 </LinearLayout>
             </LinearLayout>
@@ -143,7 +143,10 @@
                 <TextView
                     android:layout_width="170dp"
                     android:layout_height="wrap_content"
-                    android:text="VISA"
+                    android:paddingStart="50dp"
+                    android:text="Thanh toán sau khi nhận hàng"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textAlignment="textEnd"/>
                 <ImageView
                     android:layout_width="match_parent"

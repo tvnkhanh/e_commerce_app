@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 public class Product implements Serializable {
-    private String id;
+    private String productId;
     private String productName;
     private String uid;
     private String categoryId;
@@ -17,9 +17,9 @@ public class Product implements Serializable {
     public Product() {
     }
 
-    public Product(String id, String productName, String uid, String categoryId,
+    public Product(String productId, String productName, String uid, String categoryId,
                    String desc, String price, int quantity, List<String> listImageUrl, List<Rating> ratings) {
-        this.id = id;
+        this.productId = productId;
         this.productName = productName;
         this.uid = uid;
         this.categoryId = categoryId;
@@ -30,12 +30,12 @@ public class Product implements Serializable {
         this.ratings = ratings;
     }
 
-    public String getId() {
-        return id;
+    public String getProductId() {
+        return productId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 
     public String getProductName() {

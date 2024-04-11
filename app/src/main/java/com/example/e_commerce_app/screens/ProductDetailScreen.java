@@ -137,29 +137,11 @@ public class ProductDetailScreen extends Fragment {
         cartButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Bundle bundle = new Bundle();
-                bundle.putSerializable("product", product);
-
-                FragmentManager fragmentManager = getParentFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                Fragment currentFragment = fragmentManager.findFragmentById(R.id.product_detail_container);
-                if (currentFragment != null) {
-                    fragmentTransaction.detach(currentFragment);
-                }
-
-                Fragment cartFragment = fragmentManager.findFragmentByTag("CartFragment");
-                if (cartFragment == null) {
-                    cartFragment = new CartScreen(bottomNavigationView);
-                    cartFragment.setArguments(bundle);
-
-                    fragmentTransaction.add(R.id.product_detail_container, cartFragment, "CartFragment");
-                } else {
-                    fragmentTransaction.attach(cartFragment);
-                }
-
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
+                CartScreen cartScreen = new CartScreen(bottomNavigationView, false);
+                getParentFragmentManager().beginTransaction().setReorderingAllowed(true)
+                        .replace(R.id.product_detail_container, cartScreen)
+                        .addToBackStack("cart_screen")
+                        .commit();
             }
         });
 
@@ -196,7 +178,7 @@ public class ProductDetailScreen extends Fragment {
                                                             int temp = 0;
                                                             for (DocumentSnapshot cartItem : cartItems.getDocuments()) {
                                                                 CartDetail cartDetail = cartItem.toObject(CartDetail.class);
-                                                                if (Objects.equals(cartDetail.getProductId(), product.getId())) {
+                                                                if (Objects.equals(cartDetail.getProductId(), product.getProductId())) {
                                                                     temp += 1;
                                                                     cartDetail.setQuantity(cartDetail.getQuantity() + 1);
                                                                     db.collection("cart_detail").document(cartItem.getId()).set(cartDetail)
@@ -216,10 +198,10 @@ public class ProductDetailScreen extends Fragment {
                                                                 }
                                                             }
                                                             if (temp == 0) {
-                                                                addToCart(product.getId(), cartObject.getCartId());
+                                                                addToCart(product.getProductId(), cartObject.getCartId());
                                                             }
                                                         } else {
-                                                            addToCart(product.getId(), cartObject.getCartId());
+                                                            addToCart(product.getProductId(), cartObject.getCartId());
                                                         }
                                                     }
                                                 });

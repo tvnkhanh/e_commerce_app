@@ -111,7 +111,7 @@ public class HomeScreen extends AppCompatActivity {
         homeScreenCartBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                CartScreen cartScreen = new CartScreen(bottomNavigationView);
+                CartScreen cartScreen = new CartScreen(bottomNavigationView, true);
                 getSupportFragmentManager().beginTransaction().setReorderingAllowed(true)
                         .replace(R.id.home_fragment_container, cartScreen)
                         .addToBackStack("home_screen")

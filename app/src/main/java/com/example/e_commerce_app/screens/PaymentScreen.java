@@ -37,9 +37,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -100,24 +103,7 @@ public class PaymentScreen extends Fragment {
         backBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FragmentManager fragmentManager = getParentFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                Fragment currentFragment = fragmentManager.findFragmentById(R.id.cart_screen_container);
-                if (currentFragment != null) {
-                    fragmentTransaction.detach(currentFragment);
-                }
-
-                Fragment cartFragment = fragmentManager.findFragmentByTag("CartFragment");
-                if (cartFragment == null) {
-                    cartFragment = new CartScreen(bottomNavigationView);
-                    fragmentTransaction.add(R.id.cart_screen_container, cartFragment, "CartFragment");
-                } else {
-                    fragmentTransaction.attach(cartFragment);
-                }
-
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
+                requireActivity().getSupportFragmentManager().popBackStack();
             }
         });
     }
@@ -136,77 +122,115 @@ public class PaymentScreen extends Fragment {
             @Override
             public void onClick(View v) {
                 int quantity = 0;
+                boolean isValid = false;
                 for (Product product : products) {
                     for (CartDetail cartDetail : cartDetails) {
-                        if (Objects.equals(product.getId(), cartDetail.getProductId())) {
+                        if (Objects.equals(product.getProductId(), cartDetail.getProductId())) {
                             quantity = cartDetail.getQuantity();
                         }
                     }
                     if (product.getQuantity() - quantity >= 0) {
+                        isValid = true;
+                    } else {
+                        isValid = false;
                         db = FirebaseFirestore.getInstance();
-                        DocumentReference newOrderRef = db.collection("orders").document();
+                        removeProductInCart(product);
 
-                        Map<String, Object> data = new HashMap<>();
-                        data.put("orderId", newOrderRef.getId());
-                        data.put("createDate", new Date());
-                        data.put("address", "address");
-                        data.put("uid", "current_user");
+                        Toast.makeText(PaymentScreen.this.getContext(), product.getProductName() + " out of stock", Toast.LENGTH_SHORT).show();
 
-                        int finalQuantity = quantity;
-                        newOrderRef.set(data).addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void unused) {
-                                Toast.makeText(PaymentScreen.this.getContext(),  "Your payment was successful", Toast.LENGTH_SHORT).show();
+                        bottomNavigationView.setVisibility(View.VISIBLE);
+                        requireActivity().getSupportFragmentManager().popBackStack("home_screen", FragmentManager.POP_BACK_STACK_INCLUSIVE);
 
+                        break;
+                    }
+                }
+                if (isValid) {
+
+                    db = FirebaseFirestore.getInstance();
+                    DocumentReference newOrderRef = db.collection("orders").document();
+
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("orderId", newOrderRef.getId());
+                    data.put("createDate", new Date());
+                    data.put("address", "address");
+                    data.put("uid", "current_user");
+
+                    newOrderRef.set(data).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void unused) {
+                            Toast.makeText(PaymentScreen.this.getContext(), "Your payment was successful", Toast.LENGTH_SHORT).show();
+                            for (Product product : products) {
+                                int paymentPrice = 0;
+                                int quantity = 0;
+                                String paymentPriceString = "";
+                                for (CartDetail cartDetail : cartDetails) {
+                                    NumberFormat formatter = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
+                                    if (Objects.equals(product.getProductId(), cartDetail.getProductId())) {
+                                        quantity = cartDetail.getQuantity();
+                                    }
+                                    try {
+                                        Number number = formatter.parse(product.getPrice());
+                                        int num = number.intValue();
+                                        paymentPrice = num * quantity;
+                                        paymentPriceString = formatter.format(paymentPrice);
+                                    } catch (ParseException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
                                 removeProductInCart(product);
 
-                                db.collection("product").document(product.getId()).update("quantity", product.getQuantity() - finalQuantity);
+                                db.collection("product").document(product.getProductId()).update("quantity", product.getQuantity() - quantity);
 
-                                db.collection("delivery_status").whereEqualTo("statusName", "Chờ xác nhận").get()
-                                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                                if (task.isSuccessful()) {
-                                                    for (QueryDocumentSnapshot document : task.getResult()) {
-                                                        String statusId = document.getId();
-
-                                                        Map<String, Object> statusDetailData = new HashMap<>();
-                                                        statusDetailData.put("statusId", statusId);
-                                                        statusDetailData.put("orderId", newOrderRef.getId());
-                                                        statusDetailData.put("dateOfStatus", new Date());
-
-                                                        db.collection("ds_detail").add(statusDetailData).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                                                            @Override
-                                                            public void onSuccess(DocumentReference documentReference) {
-                                                                Log.d("ds_detail", "Added successfully");
-                                                            }
-                                                        }).addOnFailureListener(new OnFailureListener() {
-                                                            @Override
-                                                            public void onFailure(@NonNull Exception e) {
-                                                                Log.w("ds_detail", "Error adding document");
-                                                            }
-                                                        });
-                                                    }
-                                                } else {
-                                                    Toast.makeText(PaymentScreen.this.getContext(), "Error getting status document", Toast.LENGTH_SHORT).show();
-                                                }
-                                            }
-                                        });
+                                Map<String, Object> newOrderDetail = new HashMap<>();
+                                newOrderDetail.put("orderId", newOrderRef.getId());
+                                newOrderDetail.put("productId", product.getProductId());
+                                newOrderDetail.put("price", paymentPriceString);
+                                newOrderDetail.put("quantity", quantity);
+                                db.collection("order_detail").add(newOrderDetail).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Toast.makeText(PaymentScreen.this.getContext(), "Error create order detail", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
 
                                 bottomNavigationView.setVisibility(View.VISIBLE);
                                 requireActivity().getSupportFragmentManager().popBackStack("home_screen", FragmentManager.POP_BACK_STACK_INCLUSIVE);
                             }
-                        });
-                    } else {
-                        db = FirebaseFirestore.getInstance();
-                        removeProductInCart(product);
+                            db.collection("delivery_status").whereEqualTo("statusName", "Chờ xác nhận").get()
+                                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                            if (task.isSuccessful()) {
+                                                for (QueryDocumentSnapshot document : task.getResult()) {
+                                                    String statusId = document.getId();
 
-                        Toast.makeText(PaymentScreen.this.getContext(),  product.getProductName() + " out of stock", Toast.LENGTH_SHORT).show();
+                                                    Map<String, Object> statusDetailData = new HashMap<>();
+                                                    statusDetailData.put("statusId", statusId);
+                                                    statusDetailData.put("orderId", newOrderRef.getId());
+                                                    statusDetailData.put("dateOfStatus", new Date());
 
-                        bottomNavigationView.setVisibility(View.VISIBLE);
-                        requireActivity().getSupportFragmentManager().popBackStack("home_screen", FragmentManager.POP_BACK_STACK_INCLUSIVE);
-                    }
+                                                    db.collection("ds_detail").add(statusDetailData).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                                        @Override
+                                                        public void onSuccess(DocumentReference documentReference) {
+                                                            Log.d("ds_detail", "Added successfully");
+                                                        }
+                                                    }).addOnFailureListener(new OnFailureListener() {
+                                                        @Override
+                                                        public void onFailure(@NonNull Exception e) {
+                                                            Log.w("ds_detail", "Error adding document");
+                                                        }
+                                                    });
+                                                }
+                                            } else {
+                                                Toast.makeText(PaymentScreen.this.getContext(), "Error getting status document", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+                                    });
+                        }
+                    });
                 }
+
+
             }
         });
     }
@@ -220,7 +244,7 @@ public class PaymentScreen extends Fragment {
                             for (DocumentSnapshot cart : carts.getDocuments()) {
                                 Cart cartObject = cart.toObject(Cart.class);
                                 db.collection("cart_detail").whereEqualTo("cartId", cartObject.getCartId())
-                                        .whereEqualTo("productId", product.getId()).get()
+                                        .whereEqualTo("productId", product.getProductId()).get()
                                         .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                                             @Override
                                             public void onComplete(@NonNull Task<QuerySnapshot> task) {

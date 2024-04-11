@@ -42,7 +42,7 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         int quantity = 0;
         Product product = products.get(position);
         for (CartDetail cartDetail : cartDetails) {
-            if (Objects.equals(product.getId(), cartDetail.getProductId())) {
+            if (Objects.equals(product.getProductId(), cartDetail.getProductId())) {
                 quantity = cartDetail.getQuantity();
             }
         }
